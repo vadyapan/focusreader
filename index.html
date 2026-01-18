@@ -1,627 +1,1067 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>FocusReader - Library & Tracker</title>
     <style>
-        :root {
-            --primary: #2563eb;
-            --primary-hover: #1d4ed8;
-            --bg-body: #f8fafc;
-            --bg-panel: #ffffff;
-            --text-main: #0f172a;
-            --text-muted: #64748b;
-            --border: #e2e8f0;
-            --radius: 12px;
-            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-            --sidebar-width-expanded: 350px;
-            --sidebar-width-collapsed: 60px;
-            --sound-active-bg: #dbeafe;
-            --sound-active-text: #1e40af;
-        }
+      :root {
+        --primary: #2563eb;
+        --primary-hover: #1d4ed8;
+        --bg-body: #f8fafc;
+        --bg-panel: #ffffff;
+        --text-main: #0f172a;
+        --text-muted: #64748b;
+        --border: #e2e8f0;
+        --radius: 12px;
+        --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+          0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        --sidebar-width-expanded: 350px;
+        --sidebar-width-collapsed: 60px;
+        --sound-active-bg: #dbeafe;
+        --sound-active-text: #1e40af;
+      }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', system-ui, sans-serif; }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        font-family: 'Inter', system-ui, sans-serif;
+      }
 
-        body {
-            background-color: var(--bg-body);
-            color: var(--text-main);
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
+      body {
+        background-color: var(--bg-body);
+        color: var(--text-main);
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
 
-        /* --- Header --- */
-        header {
-            background: var(--bg-panel);
-            padding: 1rem 1.5rem;
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            height: 60px;
-            flex-shrink: 0;
-            z-index: 50;
-        }
+      /* --- Header --- */
+      header {
+        background: var(--bg-panel);
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        height: 60px;
+        flex-shrink: 0;
+        z-index: 50;
+      }
 
-        .logo { font-weight: 700; font-size: 1.2rem; color: var(--primary); display: flex; align-items: center; gap: 0.5rem; }
+      .logo {
+        font-weight: 700;
+        font-size: 1.2rem;
+        color: var(--primary);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
 
-        .btn {
-            padding: 0.5rem 1rem;
-            border-radius: 6px;
-            border: none;
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 0.9rem;
-            transition: background 0.2s;
-        }
-        .btn-primary { background: var(--primary); color: white; }
-        .btn-primary:hover { background: var(--primary-hover); }
-        .btn-ghost { background: transparent; color: var(--text-muted); }
-        .btn-ghost:hover { color: var(--text-main); background: #f1f5f9; }
-        .btn-danger { color: #ef4444; background: #fef2f2; }
-        .btn-danger:hover { background: #fee2e2; }
+      .btn {
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        border: none;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 0.9rem;
+        transition: background 0.2s;
+      }
+      .btn-primary {
+        background: var(--primary);
+        color: white;
+      }
+      .btn-primary:hover {
+        background: var(--primary-hover);
+      }
+      .btn-ghost {
+        background: transparent;
+        color: var(--text-muted);
+      }
+      .btn-ghost:hover {
+        color: var(--text-main);
+        background: #f1f5f9;
+      }
+      .btn-danger {
+        color: #ef4444;
+        background: #fef2f2;
+      }
+      .btn-danger:hover {
+        background: #fee2e2;
+      }
 
-        /* --- Views --- */
-        main { flex: 1; position: relative; overflow: hidden; }
-        .view {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            display: flex;
-            flex-direction: column;
-            transition: opacity 0.3s ease;
-        }
-        .hidden { opacity: 0; pointer-events: none; z-index: -1; }
-        .active { opacity: 1; pointer-events: all; z-index: 10; }
+      /* --- Views --- */
+      main {
+        flex: 1;
+        position: relative;
+        overflow: hidden;
+      }
+      .view {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        transition: opacity 0.3s ease;
+      }
+      .hidden {
+        opacity: 0;
+        pointer-events: none;
+        z-index: -1;
+      }
+      .active {
+        opacity: 1;
+        pointer-events: all;
+        z-index: 10;
+      }
 
-        /* --- Library View --- */
-        #library-view {
-            padding: 2rem;
-            overflow-y: auto;
-        }
-        
-        .library-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 2rem;
-        }
+      /* --- Library View --- */
+      #library-view {
+        padding: 2rem;
+        overflow-y: auto;
+      }
 
-        .book-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 1.5rem;
-            padding-bottom: 2rem;
-        }
+      .library-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+      }
 
-        .book-card {
-            background: var(--bg-panel);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            padding: 1.5rem;
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-            transition: transform 0.2s, box-shadow 0.2s;
-            position: relative;
-        }
-        .book-card:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+      .book-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 1.5rem;
+        padding-bottom: 2rem;
+      }
 
-        .card-header {
-            display: flex;
-            align-items: flex-start;
-            gap: 1rem;
-        }
-        .card-icon {
-            font-size: 2rem;
-            background: #eff6ff;
-            width: 50px; height: 60px;
-            display: flex; align-items: center; justify-content: center;
-            border-radius: 6px;
-            color: var(--primary);
-        }
-        .card-info { flex: 1; overflow: hidden; }
-        .card-title { font-weight: 600; margin-bottom: 0.25rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .card-meta { font-size: 0.8rem; color: var(--text-muted); }
+      .book-card {
+        background: var(--bg-panel);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        transition: transform 0.2s, box-shadow 0.2s;
+        position: relative;
+      }
+      .book-card:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow);
+      }
 
-        .progress-stat {
-            background: #f8fafc;
-            padding: 0.75rem;
-            border-radius: 8px;
-            text-align: center;
-        }
-        .progress-value { font-weight: 700; color: var(--text-main); font-size: 1.1rem; }
-        .progress-label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; }
+      .card-header {
+        display: flex;
+        align-items: flex-start;
+        gap: 1rem;
+      }
+      .card-icon {
+        font-size: 2rem;
+        background: #eff6ff;
+        width: 50px;
+        height: 60px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 6px;
+        color: var(--primary);
+      }
+      .card-info {
+        flex: 1;
+        overflow: hidden;
+      }
+      .card-title {
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .card-meta {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+      }
 
-        .card-actions {
-            margin-top: auto;
-            display: flex;
-            gap: 0.5rem;
-        }
-        .card-actions .btn { flex: 1; }
+      .progress-stat {
+        background: #f8fafc;
+        padding: 0.75rem;
+        border-radius: 8px;
+        text-align: center;
+      }
+      .progress-value {
+        font-weight: 700;
+        color: var(--text-main);
+        font-size: 1.1rem;
+      }
+      .progress-label {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+        text-transform: uppercase;
+      }
 
-        /* --- Upload View --- */
-        #upload-view { justify-content: center; align-items: center; padding: 2rem; }
-        .upload-zone {
-            background: var(--bg-panel);
-            border: 2px dashed var(--border);
-            border-radius: var(--radius);
-            padding: 4rem 2rem;
-            text-align: center;
-            max-width: 500px;
-            width: 100%;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .upload-zone:hover { border-color: var(--primary); background: #eff6ff; }
-        .upload-icon { font-size: 3rem; color: var(--text-muted); margin-bottom: 1rem; display: block; }
+      .card-actions {
+        margin-top: auto;
+        display: flex;
+        gap: 0.5rem;
+      }
+      .card-actions .btn {
+        flex: 1;
+      }
 
-        /* --- Reader View --- */
-        #reader-view { flex-direction: row; }
-        #pdf-container {
-            flex: 1;
-            height: 100%;
-            background: #525659;
-            display: flex;
-            justify-content: center;
-            overflow: auto;
-        }
-        #pdf-frame { width: 100%; height: 100%; border: none; display: block; }
+      /* --- Upload View --- */
+      #upload-view {
+        justify-content: center;
+        align-items: center;
+        padding: 2rem;
+      }
+      .upload-zone {
+        background: var(--bg-panel);
+        border: 2px dashed var(--border);
+        border-radius: var(--radius);
+        padding: 4rem 2rem;
+        text-align: center;
+        max-width: 500px;
+        width: 100%;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      .upload-zone:hover {
+        border-color: var(--primary);
+        background: #eff6ff;
+      }
+      .upload-icon {
+        font-size: 3rem;
+        color: var(--text-muted);
+        margin-bottom: 1rem;
+        display: block;
+      }
+      .upload-zone > .upload-text {
+        margin-bottom: 2rem;
+      }
 
-        /* Sidebar */
+      /* --- Reader View --- */
+      #reader-view {
+        flex-direction: row;
+      }
+      #pdf-container {
+        flex: 1;
+        height: 100%;
+        background: #525659;
+        display: flex;
+        justify-content: center;
+        overflow: auto;
+      }
+      #pdf-frame {
+        width: 100%;
+        height: 100%;
+        border: none;
+        display: block;
+      }
+
+      /* Sidebar */
+      #timer-sidebar {
+        width: var(--sidebar-width-expanded);
+        background: var(--bg-panel);
+        border-left: 1px solid var(--border);
+        padding: 2rem 1.5rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        box-shadow: -4px 0 15px rgba(0, 0, 0, 0.03);
+        z-index: 40;
+        transition: width 0.3s ease;
+        position: relative;
+        overflow: hidden;
+      }
+      #timer-sidebar.collapsed {
+        width: var(--sidebar-width-collapsed);
+        padding: 0;
+        border-left: none;
+      }
+      .expanded-content {
+        width: 100%;
+        transition: opacity 0.2s;
+      }
+      #timer-sidebar.collapsed .expanded-content {
+        display: none;
+      }
+      .collapsed-content {
+        display: none;
+        height: 100%;
+        width: 100%;
+        align-items: center;
+        justify-content: center;
+        background: var(--bg-panel);
+      }
+      #timer-sidebar.collapsed .collapsed-content {
+        display: flex;
+      }
+      .mini-time-display {
+        font-size: 1.5rem;
+        font-weight: 700;
+        height: 10rem;
+        color: var(--primary);
+        writing-mode: vertical-rl;
+        text-orientation: mixed;
+        letter-spacing: 5px;
+        line-height: 1.4;
+        white-space: nowrap;
+      }
+
+      /* Components */
+      .file-info {
+        width: 100%;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid var(--border);
+      }
+      .file-name {
+        font-weight: 600;
+        word-break: break-all;
+        margin-bottom: 0.25rem;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+
+      .total-read-display {
+        font-size: 0.85rem;
+        color: var(--text-muted);
+        margin-bottom: 0.5rem;
+        text-align: center;
+      }
+      .total-read-display strong {
+        color: var(--primary);
+      }
+
+      .timer-circle-container {
+        position: relative;
+        height: 150px;
+        margin: 1rem 0 2rem 0;
+      }
+      .timer-svg {
+        transform: rotate(-90deg);
+        width: 100%;
+        height: 100%;
+      }
+      .timer-bg {
+        fill: none;
+        stroke: #e2e8f0;
+        stroke-width: 8;
+      }
+      .timer-progress {
+        fill: none;
+        stroke: var(--primary);
+        stroke-width: 8;
+        stroke-linecap: round;
+        stroke-dasharray: 565;
+        stroke-dashoffset: 0;
+        transition: stroke-dashoffset 1s linear;
+      }
+      .timer-text {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: var(--text-main);
+        font-variant-numeric: tabular-nums;
+      }
+
+      .controls-wrapper {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-direction: column;
+        gap: 1rem;
+      }
+      .time-input-group {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+      }
+      .time-input {
+        width: 70px;
+        padding: 0.5rem;
+        text-align: center;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        font-size: 1rem;
+      }
+      .status-badge {
+        padding: 0.25rem 0.75rem;
+        border-radius: 99px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        background: #f1f5f9;
+        color: var(--text-muted);
+        margin-top: 0.5rem;
+      }
+      .status-badge.running {
+        background: #dcfce7;
+        color: #166534;
+      }
+      .status-badge.paused {
+        background: #fef9c3;
+        color: #854d0e;
+      }
+      .action-buttons {
+        display: flex;
+        gap: 0.5rem;
+        width: 100%;
+        justify-content: center;
+      }
+      #start-btn {
+        background: #dcfce7;
+        color: #166534;
+        border: 1px solid #166534;
+        margin-right: 1rem;
+      }
+      #pause-btn {
+        background: #fef9c3;
+        color: #854d0e;
+        border: 1px solid #854d0e;
+      }
+      #resume-btn {
+        background: #dcedfc;
+        color: #165d65;
+        border: 1px solid #165d65;
+      }
+      #reset-btn {
+        width: 100%;
+      }
+
+      /* Sound Controls */
+      .sound-section {
+        margin-top: auto;
+        padding-top: 1.5rem;
+        border-top: 1px solid var(--border);
+        width: 100%;
+      }
+      .sound-label {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--text-muted);
+        margin-bottom: 0.75rem;
+        text-align: center;
+      }
+      .sound-buttons {
+        display: flex;
+        gap: 0.5rem;
+        justify-content: center;
+      }
+      .sound-btn {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 0.75rem 0.5rem;
+        width: 10rem;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: white;
+        cursor: pointer;
+        transition: all 0.2s;
+        gap: 0.25rem;
+      }
+      .sound-btn:hover {
+        background: #f8fafc;
+        border-color: #cbd5e1;
+      }
+      .sound-btn.active {
+        background: var(--sound-active-bg);
+        border-color: #93c5fd;
+        color: var(--sound-active-text);
+      }
+      .sound-btn svg {
+        width: 20px;
+        height: 20px;
+      }
+      .sound-btn span {
+        font-size: 0.75rem;
+        font-weight: 600;
+      }
+
+      .toggle-sidebar-btn {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        background: #f1f5f9;
+        border: 1px solid var(--border);
+        color: var(--text-muted);
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        z-index: 30;
+      }
+      .toggle-sidebar-btn:hover {
+        background: #e2e8f0;
+        color: var(--text-main);
+      }
+
+      /* Toast */
+      #toast {
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%) translateY(100px);
+        background: #1e293b;
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 50px;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        z-index: 1000;
+        font-size: 0.9rem;
+      }
+      #toast.visible {
+        transform: translateX(-50%) translateY(0);
+      }
+
+      @media (max-width: 768px) {
+        #reader-view {
+          flex-direction: column;
+        }
         #timer-sidebar {
-            width: var(--sidebar-width-expanded);
-            background: var(--bg-panel);
-            border-left: 1px solid var(--border);
-            padding: 2rem 1.5rem;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            box-shadow: -4px 0 15px rgba(0,0,0,0.03);
-            z-index: 40;
-            transition: width 0.3s ease;
-            position: relative;
-            overflow: hidden;
+          width: 100%;
+          height: auto;
+          border-left: none;
+          border-top: 1px solid var(--border);
+          padding: 1rem;
+          flex-direction: row;
+          flex-wrap: wrap;
+          justify-content: space-between;
+          gap: 1rem;
+        }
+        .toggle-sidebar-btn {
+          display: none;
         }
         #timer-sidebar.collapsed {
-            width: var(--sidebar-width-collapsed);
-            padding: 0;
-            border-left: none;
+          width: 100%;
+          height: 60px;
         }
-        .expanded-content { width: 100%; transition: opacity 0.2s; }
-        #timer-sidebar.collapsed .expanded-content { display: none; }
-        .collapsed-content {
-            display: none;
-            height: 100%;
-            width: 100%;
-            align-items: center;
-            justify-content: center;
-            background: var(--bg-panel);
-        }
-        #timer-sidebar.collapsed .collapsed-content { display: flex; }
-        .mini-time-display {
-            font-size: 1.5rem; font-weight: 700; color: var(--primary);
-            writing-mode: vertical-rl; text-orientation: mixed;
-            letter-spacing: 5px; line-height: 1.4; white-space: nowrap;
-        }
-
-        /* Components */
-        .file-info { width: 100%; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
-        .file-name { font-weight: 600; word-break: break-all; margin-bottom: 0.25rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-        
-        .total-read-display {
-            font-size: 0.85rem;
-            color: var(--text-muted);
-            margin-bottom: 0.5rem;
-            text-align: center;
-        }
-        .total-read-display strong { color: var(--primary); }
-
         .timer-circle-container {
-            position: relative;
-            width: 180px;
-            height: 180px;
-            margin: 1rem 0 2rem 0;
-        }
-        .timer-svg { transform: rotate(-90deg); width: 100%; height: 100%; }
-        .timer-bg { fill: none; stroke: #e2e8f0; stroke-width: 8; }
-        .timer-progress { 
-            fill: none; stroke: var(--primary); stroke-width: 8; stroke-linecap: round; 
-            stroke-dasharray: 565; stroke-dashoffset: 0; transition: stroke-dashoffset 1s linear;
+          width: 80px;
+          height: 80px;
+          margin: 0;
         }
         .timer-text {
-            position: absolute;
-            top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 2.5rem;
-            font-weight: 700;
-            color: var(--text-main);
-            font-variant-numeric: tabular-nums;
+          font-size: 1.5rem;
         }
-        
-        .controls-wrapper { width: 100%; display: flex; flex-direction: column; gap: 1rem; }
-        .time-input-group { display: flex; align-items: center; justify-content: center; gap: 0.5rem; }
-        .time-input { width: 70px; padding: 0.5rem; text-align: center; border: 1px solid var(--border); border-radius: 6px; font-size: 1rem; }
-        .status-badge {
-            padding: 0.25rem 0.75rem; border-radius: 99px; font-size: 0.8rem; font-weight: 600;
-            background: #f1f5f9; color: var(--text-muted); margin-top: 0.5rem;
+        .file-info {
+          display: none;
         }
-        .status-badge.running { background: #dcfce7; color: #166534; }
-        .status-badge.paused { background: #fef9c3; color: #854d0e; }
-        .action-buttons { display: flex; gap: 0.5rem; justify-content: center; }
-
-        /* Sound Controls */
-        .sound-section { margin-top: auto; padding-top: 1.5rem; border-top: 1px solid var(--border); width: 100%; }
-        .sound-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: 0.75rem; text-align: center; }
-        .sound-buttons { display: flex; gap: 0.5rem; justify-content: center; }
-        .sound-btn {
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            padding: 0.75rem 0.5rem; border: 1px solid var(--border); border-radius: 8px;
-            background: white; cursor: pointer; transition: all 0.2s; gap: 0.25rem;
+        .controls-wrapper {
+          flex: 1;
+          display: flex;
+          flex-direction: row;
+          flex-wrap: wrap;
+          align-items: center;
+          justify-content: space-between;
         }
-        .sound-btn:hover { background: #f8fafc; border-color: #cbd5e1; }
-        .sound-btn.active { background: var(--sound-active-bg); border-color: #93c5fd; color: var(--sound-active-text); }
-        .sound-btn svg { width: 20px; height: 20px; }
-        .sound-btn span { font-size: 0.75rem; font-weight: 600; }
-
-        .toggle-sidebar-btn {
-            position: absolute; top: 1rem; right: 1rem; background: #f1f5f9;
-            border: 1px solid var(--border); color: var(--text-muted);
-            width: 28px; height: 28px; border-radius: 50%;
-            display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 30;
+        .mini-time-display {
+          writing-mode: horizontal-tb;
+          text-orientation: mixed;
+          letter-spacing: normal;
         }
-        .toggle-sidebar-btn:hover { background: #e2e8f0; color: var(--text-main); }
-
-        /* Toast */
-        #toast {
-            position: fixed; bottom: 20px; left: 50%;
-            transform: translateX(-50%) translateY(100px);
-            background: #1e293b; color: white; padding: 0.75rem 1.5rem;
-            border-radius: 50px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
-            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            z-index: 1000; font-size: 0.9rem;
+        .sound-section {
+          display: none;
         }
-        #toast.visible { transform: translateX(-50%) translateY(0); }
-
-        @media (max-width: 768px) {
-            #reader-view { flex-direction: column; }
-            #timer-sidebar {
-                width: 100%; height: auto; border-left: none; border-top: 1px solid var(--border);
-                padding: 1rem; flex-direction: row; flex-wrap: wrap; justify-content: space-between; gap: 1rem;
-            }
-            .toggle-sidebar-btn { display: none; }
-            #timer-sidebar.collapsed { width: 100%; height: 60px; }
-            .timer-circle-container { width: 80px; height: 80px; margin: 0; }
-            .timer-text { font-size: 1.5rem; }
-            .file-info { display: none; }
-            .controls-wrapper { flex: 1; display: flex; flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: space-between; }
-            .mini-time-display { writing-mode: horizontal-tb; text-orientation: mixed; letter-spacing: normal; }
-            .sound-section { display: none; }
-        }
+      }
     </style>
-</head>
-<body>
-
+  </head>
+  <body>
     <header>
-        <div class="logo">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
-                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
-            </svg>
-            FocusReader
-        </div>
-        <div id="header-actions">
-            <!-- Dynamic Buttons injected via JS -->
-        </div>
+      <div class="logo">
+        <svg
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+          <path
+            d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"
+          ></path>
+        </svg>
+        FocusReader
+      </div>
+      <div id="header-actions">
+        <!-- Dynamic Buttons injected via JS -->
+      </div>
     </header>
 
     <main>
-        <!-- 1. Library View -->
-        <section id="library-view" class="view active">
-            <div class="library-header">
-                <h2>My Library</h2>
-                <button class="btn btn-primary" onclick="app.goToUpload()">+ Add New Book</button>
-            </div>
-            <div id="book-grid" class="book-grid">
-                <!-- Book cards injected here -->
-                <div style="grid-column: 1/-1; text-align: center; color: var(--text-muted); margin-top: 2rem;">
-                    No books saved yet. Add one to get started!
-                </div>
-            </div>
-        </section>
+      <!-- 1. Library View -->
+      <section id="library-view" class="view active">
+        <div class="library-header">
+          <h2>My Library</h2>
+          <button class="btn btn-primary" onclick="app.goToUpload()">
+            + Add New Book
+          </button>
+        </div>
+        <div id="book-grid" class="book-grid">
+          <!-- Book cards injected here -->
+          <div
+            style="
+              grid-column: 1/-1;
+              text-align: center;
+              color: var(--text-muted);
+              margin-top: 2rem;
+            "
+          >
+            No books saved yet. Add one to get started!
+          </div>
+        </div>
+      </section>
 
-        <!-- 2. Upload View -->
-        <section id="upload-view" class="view hidden">
-            <div class="upload-zone" id="drop-zone">
-                <span class="upload-icon">📄</span>
-                <div class="upload-text">
-                    <h2>Upload your PDF</h2>
-                    <p>Drag & drop here, or click to browse</p>
-                </div>
-                <button class="btn btn-primary">Select PDF File</button>
-                <input type="file" id="file-input" accept="application/pdf" hidden>
-            </div>
-            <div style="text-align: center; margin-top: 1rem;">
-                <button class="btn btn-ghost" onclick="app.goToLibrary()">Cancel</button>
-            </div>
-        </section>
+      <!-- 2. Upload View -->
+      <section id="upload-view" class="view hidden">
+        <div class="upload-zone" id="drop-zone">
+          <span class="upload-icon">📄</span>
+          <div class="upload-text">
+            <h2>Upload your PDF</h2>
+            <p>Drag & drop here, or click to browse</p>
+          </div>
+          <button class="btn btn-primary">Select PDF File</button>
+          <input type="file" id="file-input" accept="application/pdf" hidden />
+        </div>
+        <div style="text-align: center; margin-top: 1rem">
+          <button class="btn btn-ghost" onclick="app.goToLibrary()">
+            Cancel
+          </button>
+        </div>
+      </section>
 
-        <!-- 3. Reader View -->
-        <section id="reader-view" class="view hidden">
-            <div id="pdf-container">
-                <iframe id="pdf-frame" title="PDF Viewer"></iframe>
+      <!-- 3. Reader View -->
+      <section id="reader-view" class="view hidden">
+        <div id="pdf-container">
+          <iframe id="pdf-frame" title="PDF Viewer"></iframe>
+        </div>
+
+        <aside id="timer-sidebar">
+          <button
+            class="toggle-sidebar-btn"
+            onclick="app.toggleSidebar()"
+            title="Collapse Timer"
+          >
+            <svg
+              id="toggle-icon"
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="3"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
+          </button>
+
+          <div class="expanded-content">
+            <div class="file-info">
+              <div class="file-name" id="file-name-display">Document.pdf</div>
+              <div class="total-read-display">
+                Total Read: <strong id="total-read-time">0m</strong>
+              </div>
             </div>
 
-            <aside id="timer-sidebar">
-                <button class="toggle-sidebar-btn" onclick="app.toggleSidebar()" title="Collapse Timer">
-                    <svg id="toggle-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-                        <polyline points="15 18 9 12 15 6"></polyline>
-                    </svg>
+            <div class="timer-circle-container">
+              <svg class="timer-svg" viewBox="0 0 200 200">
+                <circle class="timer-bg" cx="100" cy="100" r="90"></circle>
+                <circle
+                  class="timer-progress"
+                  cx="100"
+                  cy="100"
+                  r="90"
+                  id="progress-ring"
+                ></circle>
+              </svg>
+              <div class="timer-text" id="time-display">00:00</div>
+            </div>
+
+            <div class="controls-wrapper">
+              <div id="status-badge" class="status-badge">Ready to Read</div>
+
+              <div class="time-input-group" id="input-group">
+                <label for="duration">Session (min):</label>
+                <input
+                  type="number"
+                  id="duration"
+                  class="time-input"
+                  value="20"
+                  min="1"
+                  max="180"
+                />
+              </div>
+
+              <div class="action-buttons">
+                <button
+                  id="start-btn"
+                  class="btn btn-primary"
+                  onclick="timer.start()"
+                >
+                  Start
                 </button>
+                <button
+                  id="pause-btn"
+                  class="btn btn-primary hidden"
+                  onclick="timer.pause()"
+                >
+                  Pause
+                </button>
+                <button
+                  id="resume-btn"
+                  class="btn btn-primary hidden"
+                  onclick="timer.resume()"
+                >
+                  Resume
+                </button>
+              </div>
 
-                <div class="expanded-content">
-                    <div class="file-info">
-                        <div class="file-name" id="file-name-display">Document.pdf</div>
-                        <div class="total-read-display">Total Read: <strong id="total-read-time">0m</strong></div>
-                    </div>
+              <div class="action-buttons">
+                <button
+                  id="reset-btn"
+                  class="btn btn-ghost"
+                  onclick="timer.resetAndSave()"
+                >
+                  Reset
+                </button>
+              </div>
 
-                    <div class="timer-circle-container">
-                        <svg class="timer-svg" viewBox="0 0 200 200">
-                            <circle class="timer-bg" cx="100" cy="100" r="90"></circle>
-                            <circle class="timer-progress" cx="100" cy="100" r="90" id="progress-ring"></circle>
-                        </svg>
-                        <div class="timer-text" id="time-display">00:00</div>
-                    </div>
-
-                    <div class="controls-wrapper">
-                        <div id="status-badge" class="status-badge">Ready to Read</div>
-                        
-                        <div class="time-input-group" id="input-group">
-                            <label for="duration">Session (min):</label>
-                            <input type="number" id="duration" class="time-input" value="20" min="1" max="180">
-                        </div>
-
-                        <div class="action-buttons">
-                            <button id="start-btn" class="btn btn-primary" onclick="timer.start()">Start</button>
-                            <button id="pause-btn" class="btn btn-primary hidden" onclick="timer.pause()">Pause</button>
-                            <button id="resume-btn" class="btn btn-primary hidden" onclick="timer.resume()">Resume</button>
-                            <button id="reset-btn" class="btn btn-ghost" onclick="timer.resetAndSave()">Save & Reset</button>
-                        </div>
-                        
-                        <div class="sound-section">
-                            <div class="sound-label">Ambient Sound</div>
-                            <div class="sound-buttons">
-                                <button class="sound-btn" id="btn-sound-plane" onclick="soundEngine.toggle('plane')">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h20"/><path d="M13 2v20"/><path d="M4.93 4.93l14.14 14.14"/><path d="M19.07 4.93L4.93 19.07"/></svg>
-                                    <span>Plane</span>
-                                </button>
-                                <button class="sound-btn" id="btn-sound-train" onclick="soundEngine.toggle('train')">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="12" rx="2"/><circle cx="7.5" cy="16.5" r="2.5"/><circle cx="16.5" cy="16.5" r="2.5"/><path d="M7.5 6v-2a2 2 0 0 1 2-2h5a2 2 0 0 1 2 2v2"/></svg>
-                                    <span>Train</span>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
+              <div class="sound-section">
+                <div class="sound-label">Ambient Sound</div>
+                <div class="sound-buttons">
+                  <button
+                    class="sound-btn"
+                    id="btn-sound-plane"
+                    onclick="soundEngine.toggle('plane')"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      class="lucide lucide-plane-icon lucide-plane"
+                    >
+                      <path
+                        d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"
+                      />
+                    </svg>
+                    <span>Plane</span>
+                  </button>
+                  <button
+                    class="sound-btn"
+                    id="btn-sound-train"
+                    onclick="soundEngine.toggle('train')"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      class="lucide lucide-train-front-icon lucide-train-front"
+                    >
+                      <path d="M8 3.1V7a4 4 0 0 0 8 0V3.1" />
+                      <path d="m9 15-1-1" />
+                      <path d="m15 15 1-1" />
+                      <path
+                        d="M9 19c-2.8 0-5-2.2-5-5v-4a8 8 0 0 1 16 0v4c0 2.8-2.2 5-5 5Z"
+                      />
+                      <path d="m8 19-2 3" />
+                      <path d="m16 19 2 3" />
+                    </svg>
+                    <span>Train</span>
+                  </button>
                 </div>
+              </div>
+            </div>
+          </div>
 
-                <div class="collapsed-content">
-                    <div id="mini-time-display" class="mini-time-display">00:00</div>
-                </div>
-            </aside>
-        </section>
+          <div class="collapsed-content">
+            <div id="mini-time-display" class="mini-time-display">00:00</div>
+          </div>
+        </aside>
+      </section>
     </main>
 
     <div id="toast">Message</div>
 
     <script>
-        // --- IndexedDB Wrapper ---
-        const db = {
-            dbName: 'FocusReaderDB',
-            version: 1,
-            db: null,
+      // --- IndexedDB Wrapper ---
+      const db = {
+        dbName: 'FocusReaderDB',
+        version: 1,
+        db: null,
 
-            async init() {
-                return new Promise((resolve, reject) => {
-                    const request = indexedDB.open(this.dbName, this.version);
-                    
-                    request.onupgradeneeded = (e) => {
-                        this.db = e.target.result;
-                        if (!this.db.objectStoreNames.contains('books')) {
-                            this.db.createObjectStore('books', { keyPath: 'id', autoIncrement: true });
-                        }
-                    };
+        async init() {
+          return new Promise((resolve, reject) => {
+            const request = indexedDB.open(this.dbName, this.version);
 
-                    request.onsuccess = (e) => {
-                        this.db = e.target.result;
-                        resolve(this.db);
-                    };
-
-                    request.onerror = (e) => reject(e);
+            request.onupgradeneeded = (e) => {
+              this.db = e.target.result;
+              if (!this.db.objectStoreNames.contains('books')) {
+                this.db.createObjectStore('books', {
+                  keyPath: 'id',
+                  autoIncrement: true,
                 });
-            },
+              }
+            };
 
-            async addBook(file) {
-                return new Promise((resolve, reject) => {
-                    const transaction = this.db.transaction(['books'], 'readwrite');
-                    const store = transaction.objectStore('books');
-                    const book = {
-                        name: file.name,
-                        blob: file,
-                        type: file.type,
-                        size: file.size,
-                        totalSeconds: 0,
-                        addedAt: new Date()
-                    };
-                    const request = store.add(book);
-                    request.onsuccess = () => resolve(request.result); // Return ID
-                    request.onerror = () => reject(request.error);
-                });
-            },
+            request.onsuccess = (e) => {
+              this.db = e.target.result;
+              resolve(this.db);
+            };
 
-            async getAllBooks() {
-                return new Promise((resolve, reject) => {
-                    const transaction = this.db.transaction(['books'], 'readonly');
-                    const store = transaction.objectStore('books');
-                    const request = store.getAll();
-                    request.onsuccess = () => resolve(request.result);
-                    request.onerror = () => reject(request.error);
-                });
-            },
+            request.onerror = (e) => reject(e);
+          });
+        },
 
-            async updateBookProgress(id, newTotalSeconds) {
-                return new Promise((resolve, reject) => {
-                    const transaction = this.db.transaction(['books'], 'readwrite');
-                    const store = transaction.objectStore('books');
-                    const request = store.get(id);
-                    request.onsuccess = () => {
-                        const data = request.result;
-                        data.totalSeconds = newTotalSeconds;
-                        store.put(data);
-                        resolve();
-                    };
-                    request.onerror = () => reject(request.error);
-                });
-            },
+        async addBook(file) {
+          return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction(['books'], 'readwrite');
+            const store = transaction.objectStore('books');
+            const book = {
+              name: file.name,
+              blob: file,
+              type: file.type,
+              size: file.size,
+              totalSeconds: 0,
+              addedAt: new Date(),
+            };
+            const request = store.add(book);
+            request.onsuccess = () => resolve(request.result); // Return ID
+            request.onerror = () => reject(request.error);
+          });
+        },
 
-            async deleteBook(id) {
-                return new Promise((resolve, reject) => {
-                    const transaction = this.db.transaction(['books'], 'readwrite');
-                    const store = transaction.objectStore('books');
-                    store.delete(id);
-                    transaction.oncomplete = () => resolve();
-                });
-            }
-        };
+        async getAllBooks() {
+          return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction(['books'], 'readonly');
+            const store = transaction.objectStore('books');
+            const request = store.getAll();
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = () => reject(request.error);
+          });
+        },
 
-        // --- Sound Engine ---
-        const soundEngine = {
-            ctx: null, activeSource: null, activeGain: null, activeType: null, lfo: null,
-            init() {
-                if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)();
-                if (this.ctx.state === 'suspended') this.ctx.resume();
-            },
-            createBrownNoise() {
-                const bufferSize = this.ctx.sampleRate * 2;
-                const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
-                const data = buffer.getChannelData(0);
-                let lastOut = 0;
-                for (let i = 0; i < bufferSize; i++) {
-                    const white = Math.random() * 2 - 1;
-                    data[i] = (lastOut + (0.02 * white)) / 1.02;
-                    lastOut = data[i]; data[i] *= 3.5;
-                }
-                return buffer;
-            },
-            play(type) {
-                this.init(); this.stop();
-                const buffer = this.createBrownNoise();
-                this.activeSource = this.ctx.createBufferSource();
-                this.activeSource.buffer = buffer;
-                this.activeSource.loop = true;
-                const filter = this.ctx.createBiquadFilter();
-                filter.type = 'lowpass';
-                filter.frequency.value = type === 'plane' ? 400 : 300;
-                this.activeGain = this.ctx.createGain();
-                this.activeGain.gain.value = 0.5;
-                this.activeSource.connect(filter);
-                filter.connect(this.activeGain);
-                this.activeGain.connect(this.ctx.destination);
-                this.activeSource.start();
-                if (type === 'train') {
-                    this.lfo = this.ctx.createOscillator();
-                    this.lfo.type = 'sine';
-                    this.lfo.frequency.value = 4;
-                    const lfoGain = this.ctx.createGain();
-                    lfoGain.gain.value = 0.3;
-                    this.lfo.connect(lfoGain);
-                    lfoGain.connect(this.activeGain.gain);
-                    this.lfo.start();
-                }
-                this.activeType = type;
-            },
-            stop() {
-                if (this.activeSource) { try { this.activeSource.stop(); } catch(e){} this.activeSource = null; }
-                if (this.lfo) { try { this.lfo.stop(); } catch(e){} this.lfo = null; }
-                this.activeType = null;
-            },
-            toggle(type) {
-                const btnPlane = document.getElementById('btn-sound-plane');
-                const btnTrain = document.getElementById('btn-sound-train');
-                if (this.activeType === type) {
-                    this.stop(); btnPlane.classList.remove('active'); btnTrain.classList.remove('active');
-                } else {
-                    this.play(type); btnPlane.classList.remove('active'); btnTrain.classList.remove('active');
-                    if (type === 'plane') btnPlane.classList.add('active');
-                    if (type === 'train') btnTrain.classList.add('active');
-                }
-            }
-        };
+        async updateBookProgress(id, newTotalSeconds) {
+          return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction(['books'], 'readwrite');
+            const store = transaction.objectStore('books');
+            const request = store.get(id);
+            request.onsuccess = () => {
+              const data = request.result;
+              data.totalSeconds = newTotalSeconds;
+              store.put(data);
+              resolve();
+            };
+            request.onerror = () => reject(request.error);
+          });
+        },
 
-        // --- Application Logic ---
-        const app = {
-            currentBookId: null,
-            currentBookTotalSeconds: 0,
-            objectUrl: null,
+        async deleteBook(id) {
+          return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction(['books'], 'readwrite');
+            const store = transaction.objectStore('books');
+            store.delete(id);
+            transaction.oncomplete = () => resolve();
+          });
+        },
+      };
 
-            async init() {
-                await db.init();
-                this.setupEventListeners();
-                this.renderLibrary();
-                this.updateHeaderButtons('library');
-            },
+      // --- Sound Engine ---
+      const soundEngine = {
+        ctx: null,
+        activeSource: null,
+        activeGain: null,
+        activeType: null,
+        lfo: null,
+        init() {
+          if (!this.ctx)
+            this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+          if (this.ctx.state === 'suspended') this.ctx.resume();
+        },
+        createBrownNoise() {
+          const bufferSize = this.ctx.sampleRate * 2;
+          const buffer = this.ctx.createBuffer(
+            1,
+            bufferSize,
+            this.ctx.sampleRate
+          );
+          const data = buffer.getChannelData(0);
+          let lastOut = 0;
+          for (let i = 0; i < bufferSize; i++) {
+            const white = Math.random() * 2 - 1;
+            data[i] = (lastOut + 0.02 * white) / 1.02;
+            lastOut = data[i];
+            data[i] *= 3.5;
+          }
+          return buffer;
+        },
+        play(type) {
+          this.init();
+          this.stop();
+          const buffer = this.createBrownNoise();
+          this.activeSource = this.ctx.createBufferSource();
+          this.activeSource.buffer = buffer;
+          this.activeSource.loop = true;
+          const filter = this.ctx.createBiquadFilter();
+          filter.type = 'lowpass';
+          filter.frequency.value = type === 'plane' ? 400 : 300;
+          this.activeGain = this.ctx.createGain();
+          this.activeGain.gain.value = 0.5;
+          this.activeSource.connect(filter);
+          filter.connect(this.activeGain);
+          this.activeGain.connect(this.ctx.destination);
+          this.activeSource.start();
+          if (type === 'train') {
+            this.lfo = this.ctx.createOscillator();
+            this.lfo.type = 'sine';
+            this.lfo.frequency.value = 4;
+            const lfoGain = this.ctx.createGain();
+            lfoGain.gain.value = 0.3;
+            this.lfo.connect(lfoGain);
+            lfoGain.connect(this.activeGain.gain);
+            this.lfo.start();
+          }
+          this.activeType = type;
+        },
+        stop() {
+          if (this.activeSource) {
+            try {
+              this.activeSource.stop();
+            } catch (e) {}
+            this.activeSource = null;
+          }
+          if (this.lfo) {
+            try {
+              this.lfo.stop();
+            } catch (e) {}
+            this.lfo = null;
+          }
+          this.activeType = null;
+        },
+        toggle(type) {
+          const btnPlane = document.getElementById('btn-sound-plane');
+          const btnTrain = document.getElementById('btn-sound-train');
+          if (this.activeType === type) {
+            this.stop();
+            btnPlane.classList.remove('active');
+            btnTrain.classList.remove('active');
+          } else {
+            this.play(type);
+            btnPlane.classList.remove('active');
+            btnTrain.classList.remove('active');
+            if (type === 'plane') btnPlane.classList.add('active');
+            if (type === 'train') btnTrain.classList.add('active');
+          }
+        },
+      };
 
-            setupEventListeners() {
-                const dropZone = document.getElementById('drop-zone');
-                const fileInput = document.getElementById('file-input');
-                dropZone.addEventListener('click', () => fileInput.click());
-                fileInput.addEventListener('change', (e) => {
-                    if (e.target.files.length) this.handleUpload(e.target.files[0]);
-                });
-                dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('drag-over'); });
-                dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
-                dropZone.addEventListener('drop', (e) => {
-                    e.preventDefault(); dropZone.classList.remove('drag-over');
-                    if (e.dataTransfer.files.length) this.handleUpload(e.dataTransfer.files[0]);
-                });
-            },
+      // --- Application Logic ---
+      const app = {
+        currentBookId: null,
+        currentBookTotalSeconds: 0,
+        objectUrl: null,
 
-            async handleUpload(file) {
-                if (file.type !== 'application/pdf') {
-                    this.showToast("Please upload a PDF file.");
-                    return;
-                }
-                this.showToast("Saving to library...");
-                try {
-                    const id = await db.addBook(file);
-                    this.showToast("Book saved!");
-                    this.goToLibrary();
-                } catch (e) {
-                    console.error(e);
-                    this.showToast("Error saving book.");
-                }
-            },
+        async init() {
+          await db.init();
+          this.setupEventListeners();
+          this.renderLibrary();
+          this.updateHeaderButtons('library');
+        },
 
-            async renderLibrary() {
-                const books = await db.getAllBooks();
-                const grid = document.getElementById('book-grid');
-                grid.innerHTML = '';
+        setupEventListeners() {
+          const dropZone = document.getElementById('drop-zone');
+          const fileInput = document.getElementById('file-input');
+          dropZone.addEventListener('click', () => fileInput.click());
+          fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length) this.handleUpload(e.target.files[0]);
+          });
+          dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('drag-over');
+          });
+          dropZone.addEventListener('dragleave', () =>
+            dropZone.classList.remove('drag-over')
+          );
+          dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('drag-over');
+            if (e.dataTransfer.files.length)
+              this.handleUpload(e.dataTransfer.files[0]);
+          });
+        },
 
-                if (books.length === 0) {
-                    grid.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: var(--text-muted); margin-top: 2rem;">No books saved yet. Add one to get started!</div>`;
-                    return;
-                }
+        async handleUpload(file) {
+          if (file.type !== 'application/pdf') {
+            this.showToast('Please upload a PDF file.');
+            return;
+          }
+          this.showToast('Saving to library...');
+          try {
+            const id = await db.addBook(file);
+            this.showToast('Book saved!');
+            this.goToLibrary(); // This will now refresh the list
+          } catch (e) {
+            console.error(e);
+            this.showToast('Error saving book.');
+          }
+        },
 
-                books.forEach(book => {
-                    const timeStr = this.formatTime(book.totalSeconds);
-                    const card = document.createElement('div');
-                    card.className = 'book-card';
-                    card.innerHTML = `
+        async renderLibrary() {
+          const books = await db.getAllBooks();
+          const grid = document.getElementById('book-grid');
+          grid.innerHTML = '';
+
+          if (books.length === 0) {
+            grid.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: var(--text-muted); margin-top: 2rem;">No books saved yet. Add one to get started!</div>`;
+            return;
+          }
+
+          books.forEach((book) => {
+            const timeStr = this.formatTime(book.totalSeconds);
+            const card = document.createElement('div');
+            card.className = 'book-card';
+            card.innerHTML = `
                         <div class="card-header">
                             <div class="card-icon">📄</div>
                             <div class="card-info">
-                                <div class="card-title" title="${book.name}">${book.name}</div>
-                                <div class="card-meta">Added: ${new Date(book.addedAt).toLocaleDateString()}</div>
+                                <div class="card-title" title="${book.name}">${
+              book.name
+            }</div>
+                                <div class="card-meta">Added: ${new Date(
+                                  book.addedAt
+                                ).toLocaleDateString()}</div>
                             </div>
                         </div>
                         <div class="progress-stat">
@@ -629,261 +1069,282 @@
                             <div class="progress-label">Total Read</div>
                         </div>
                         <div class="card-actions">
-                            <button class="btn btn-primary" onclick="app.openBook(${book.id})">Read</button>
-                            <button class="btn btn-danger" onclick="app.deleteBook(${book.id})">Delete</button>
+                            <button class="btn btn-primary" onclick="app.openBook(${
+                              book.id
+                            })">Read</button>
+                            <button class="btn btn-danger" onclick="app.deleteBook(${
+                              book.id
+                            })">Delete</button>
                         </div>
                     `;
-                    grid.appendChild(card);
-                });
-            },
+            grid.appendChild(card);
+          });
+        },
 
-            async openBook(id) {
-                const books = await db.getAllBooks();
-                const book = books.find(b => b.id === id);
-                if (!book) return;
+        async openBook(id) {
+          const books = await db.getAllBooks();
+          const book = books.find((b) => b.id === id);
+          if (!book) return;
 
-                this.currentBookId = book.id;
-                this.currentBookTotalSeconds = book.totalSeconds;
+          this.currentBookId = book.id;
+          this.currentBookTotalSeconds = book.totalSeconds;
 
-                // Create ObjectURL
-                if (this.objectUrl) URL.revokeObjectURL(this.objectUrl);
-                this.objectUrl = URL.createObjectURL(book.blob);
+          // Create ObjectURL
+          if (this.objectUrl) URL.revokeObjectURL(this.objectUrl);
+          this.objectUrl = URL.createObjectURL(book.blob);
 
-                // UI Updates
-                document.getElementById('file-name-display').textContent = book.name;
-                document.getElementById('total-read-time').textContent = this.formatTime(book.totalSeconds);
-                document.getElementById('pdf-frame').src = this.objectUrl;
+          // UI Updates
+          document.getElementById('file-name-display').textContent = book.name;
+          document.getElementById('total-read-time').textContent =
+            this.formatTime(book.totalSeconds);
+          document.getElementById('pdf-frame').src = this.objectUrl;
 
-                this.switchView('reader');
-                this.updateHeaderButtons('reader');
-                
-                // Reset timer to default session time
-                timer.reset();
-            },
+          this.switchView('reader');
+          this.updateHeaderButtons('reader');
 
-            async deleteBook(id) {
-                if(!confirm("Are you sure you want to delete this book?")) return;
-                await db.deleteBook(id);
-                this.renderLibrary();
-            },
+          // Reset timer to default session time
+          timer.reset();
+        },
 
-            async saveProgress() {
-                if (!this.currentBookId) return;
-                // Add current session time to total
-                const sessionSeconds = timer.getElapsedSession();
-                const newTotal = this.currentBookTotalSeconds + sessionSeconds;
-                
-                await db.updateBookProgress(this.currentBookId, newTotal);
-                
-                // Update local state
-                this.currentBookTotalSeconds = newTotal;
-                document.getElementById('total-read-time').textContent = this.formatTime(newTotal);
-                this.showToast("Progress saved!");
-            },
+        async deleteBook(id) {
+          if (!confirm('Are you sure you want to delete this book?')) return;
+          await db.deleteBook(id);
+          this.renderLibrary(); // Refresh library after delete
+        },
 
-            closeReader() {
-                this.saveProgress();
-                if (this.objectUrl) URL.revokeObjectURL(this.objectUrl);
-                document.getElementById('pdf-frame').src = "";
-                if(timer.isRunning) timer.pause();
-                soundEngine.stop();
-                this.currentBookId = null;
-                this.objectUrl = null;
-                this.renderLibrary();
-                this.switchView('library');
-                this.updateHeaderButtons('library');
-            },
+        async saveProgress() {
+          if (!this.currentBookId) return;
+          const sessionSeconds = timer.getElapsedSession();
+          const newTotal = this.currentBookTotalSeconds + sessionSeconds;
 
-            switchView(viewName) {
-                ['library', 'upload', 'reader'].forEach(v => {
-                    const el = document.getElementById(`${v}-view`);
-                    if (v === viewName) {
-                        el.classList.remove('hidden');
-                        el.classList.add('active');
-                    } else {
-                        el.classList.add('hidden');
-                        el.classList.remove('active');
-                    }
-                });
-            },
+          await db.updateBookProgress(this.currentBookId, newTotal);
 
-            goToUpload() { this.switchView('upload'); this.updateHeaderButtons('upload'); },
-            goToLibrary() { this.switchView('library'); this.updateHeaderButtons('library'); },
-            
-            toggleSidebar() {
-                const sidebar = document.getElementById('timer-sidebar');
-                const icon = document.getElementById('toggle-icon');
-                sidebar.classList.toggle('collapsed');
-                if (sidebar.classList.contains('collapsed')) {
-                    icon.innerHTML = '<polyline points="9 18 15 12 9 6"></polyline>';
-                } else {
-                    icon.innerHTML = '<polyline points="15 18 9 12 15 6"></polyline>';
-                }
-            },
+          this.currentBookTotalSeconds = newTotal;
+          document.getElementById('total-read-time').textContent =
+            this.formatTime(newTotal);
+          this.showToast('Progress saved!');
+        },
 
-            updateHeaderButtons(view) {
-                const container = document.getElementById('header-actions');
-                container.innerHTML = '';
-                if (view === 'library') {
-                    // No extra buttons needed, just the logo and the default content
-                } else if (view === 'upload') {
-                    // Cancel is handled in the view
-                } else if (view === 'reader') {
-                    const btn = document.createElement('button');
-                    btn.className = 'btn btn-ghost';
-                    btn.textContent = 'Close & Save';
-                    btn.onclick = () => this.closeReader();
-                    container.appendChild(btn);
-                }
-            },
+        closeReader() {
+          this.saveProgress();
+          if (this.objectUrl) URL.revokeObjectURL(this.objectUrl);
+          document.getElementById('pdf-frame').src = '';
+          if (timer.isRunning) timer.pause();
+          soundEngine.stop();
+          this.currentBookId = null;
+          this.objectUrl = null;
+          this.renderLibrary(); // Refresh library to show updated progress
+          this.switchView('library');
+          this.updateHeaderButtons('library');
+        },
 
-            formatTime(seconds) {
-                const h = Math.floor(seconds / 3600);
-                const m = Math.floor((seconds % 3600) / 60);
-                if (h > 0) return `${h}h ${m}m`;
-                return `${m}m`;
-            },
-
-            formatBytes(bytes) {
-                if (bytes === 0) return '0 Bytes';
-                const k = 1024;
-                const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-                const i = Math.floor(Math.log(bytes) / Math.log(k));
-                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-            },
-
-            showToast(msg) {
-                const toast = document.getElementById('toast');
-                toast.textContent = msg;
-                toast.classList.add('visible');
-                setTimeout(() => toast.classList.remove('visible'), 3000);
+        switchView(viewName) {
+          ['library', 'upload', 'reader'].forEach((v) => {
+            const el = document.getElementById(`${v}-view`);
+            if (v === viewName) {
+              el.classList.remove('hidden');
+              el.classList.add('active');
+            } else {
+              el.classList.add('hidden');
+              el.classList.remove('active');
             }
-        };
+          });
+        },
 
-        // --- Timer Logic ---
-        const timer = {
-            sessionDuration: 1200, // default 20 mins
-            remainingSeconds: 1200,
-            elapsedSessionSeconds: 0,
-            intervalId: null,
-            isRunning: false,
-            isPaused: false,
-            circumference: 565,
+        goToUpload() {
+          this.switchView('upload');
+          this.updateHeaderButtons('upload');
+        },
 
-            start() {
-                const minutes = parseInt(document.getElementById('duration').value);
-                if (!minutes || minutes <= 0) { app.showToast("Please enter a valid duration."); return; }
-                
-                this.sessionDuration = minutes * 60;
-                this.remainingSeconds = this.sessionDuration;
-                this.elapsedSessionSeconds = 0;
-                this.isRunning = true; this.isPaused = false;
+        goToLibrary() {
+          this.switchView('library');
+          this.updateHeaderButtons('library');
+          this.renderLibrary(); // <--- CRITICAL FIX: Ensure list is refreshed
+        },
 
-                this.updateUIState('running');
-                this.tick();
-                this.intervalId = setInterval(() => this.tick(), 1000);
-            },
+        toggleSidebar() {
+          const sidebar = document.getElementById('timer-sidebar');
+          const icon = document.getElementById('toggle-icon');
+          sidebar.classList.toggle('collapsed');
+          if (sidebar.classList.contains('collapsed')) {
+            icon.innerHTML = '<polyline points="9 18 15 12 9 6"></polyline>';
+          } else {
+            icon.innerHTML = '<polyline points="15 18 9 12 15 6"></polyline>';
+          }
+        },
 
-            tick() {
-                if (this.remainingSeconds > 0) {
-                    this.remainingSeconds--;
-                    this.elapsedSessionSeconds++;
-                    this.updateDisplay(this.remainingSeconds);
-                } else {
-                    this.complete();
-                }
-            },
+        updateHeaderButtons(view) {
+          const container = document.getElementById('header-actions');
+          container.innerHTML = '';
+          if (view === 'library') {
+            // No extra buttons needed
+          } else if (view === 'upload') {
+            // Cancel is handled in the view body
+          } else if (view === 'reader') {
+            const btn = document.createElement('button');
+            btn.className = 'btn btn-ghost';
+            btn.textContent = 'Close & Save';
+            btn.onclick = () => this.closeReader();
+            container.appendChild(btn);
+          }
+        },
 
-            pause() {
-                clearInterval(this.intervalId);
-                this.isRunning = false;
-                this.isPaused = true;
-                this.updateUIState('paused');
-            },
+        formatTime(seconds) {
+          const h = Math.floor(seconds / 3600);
+          const m = Math.floor((seconds % 3600) / 60);
+          if (h > 0) return `${h}h ${m}m`;
+          return `${m}m`;
+        },
 
-            resume() {
-                this.isRunning = true;
-                this.isPaused = false;
-                this.updateUIState('running');
-                this.intervalId = setInterval(() => this.tick(), 1000);
-            },
+        formatBytes(bytes) {
+          if (bytes === 0) return '0 Bytes';
+          const k = 1024;
+          const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+          const i = Math.floor(Math.log(bytes) / Math.log(k));
+          return (
+            parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
+          );
+        },
 
-            resetAndSave() {
-                clearInterval(this.intervalId);
-                this.isRunning = false; this.isPaused = false;
-                this.updateDisplay(this.sessionDuration);
-                this.updateUIState('idle');
-                
-                // Trigger save logic without closing the book
-                app.saveProgress();
-                
-                // Reset local counter so next session is fresh
-                this.elapsedSessionSeconds = 0;
-            },
+        showToast(msg) {
+          const toast = document.getElementById('toast');
+          toast.textContent = msg;
+          toast.classList.add('visible');
+          setTimeout(() => toast.classList.remove('visible'), 3000);
+        },
+      };
 
-            complete() {
-                clearInterval(this.intervalId);
-                this.isRunning = false;
-                this.updateDisplay(0);
-                this.updateUIState('completed');
-                app.saveProgress();
-                app.showToast("Session complete!");
-            },
+      // --- Timer Logic ---
+      const timer = {
+        sessionDuration: 1200, // default 20 mins
+        remainingSeconds: 1200,
+        elapsedSessionSeconds: 0,
+        intervalId: null,
+        isRunning: false,
+        isPaused: false,
+        circumference: 565,
 
-            getElapsedSession() {
-                return this.elapsedSessionSeconds;
-            },
+        start() {
+          const minutes = parseInt(document.getElementById('duration').value);
+          if (!minutes || minutes <= 0) {
+            app.showToast('Please enter a valid duration.');
+            return;
+          }
 
-            updateDisplay(seconds) {
-                const m = Math.floor(seconds / 60);
-                const s = seconds % 60;
-                const text = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-                document.getElementById('time-display').textContent = text;
-                document.getElementById('mini-time-display').textContent = text;
-                const ring = document.getElementById('progress-ring');
-                const offset = this.circumference - (seconds / this.sessionDuration) * this.circumference;
-                ring.style.strokeDashoffset = offset;
-            },
+          this.sessionDuration = minutes * 60;
+          this.remainingSeconds = this.sessionDuration;
+          this.elapsedSessionSeconds = 0;
+          this.isRunning = true;
+          this.isPaused = false;
 
-            updateUIState(state) {
-                const btns = {
-                    start: document.getElementById('start-btn'),
-                    pause: document.getElementById('pause-btn'),
-                    resume: document.getElementById('resume-btn'),
-                    inputGroup: document.getElementById('input-group')
-                };
-                const badge = document.getElementById('status-badge');
-                btns.start.classList.add('hidden');
-                btns.pause.classList.add('hidden');
-                btns.resume.classList.add('hidden');
-                
-                if (state === 'idle') {
-                    btns.inputGroup.style.visibility = 'visible';
-                    btns.start.classList.remove('hidden');
-                    badge.textContent = "Ready";
-                    badge.className = "status-badge";
-                } else if (state === 'running') {
-                    btns.inputGroup.style.visibility = 'hidden';
-                    btns.pause.classList.remove('hidden');
-                    badge.textContent = "Reading...";
-                    badge.className = "status-badge running";
-                } else if (state === 'paused') {
-                    btns.inputGroup.style.visibility = 'hidden';
-                    btns.resume.classList.remove('hidden');
-                    badge.textContent = "Paused";
-                    badge.className = "status-badge paused";
-                } else if (state === 'completed') {
-                    btns.inputGroup.style.visibility = 'visible';
-                    btns.start.classList.remove('hidden');
-                    badge.textContent = "Completed!";
-                    badge.className = "status-badge running";
-                }
-            }
-        };
+          this.updateUIState('running');
+          this.tick();
+          this.intervalId = setInterval(() => this.tick(), 1000);
+        },
 
-        document.addEventListener('DOMContentLoaded', () => {
-            app.init();
-        });
+        tick() {
+          if (this.remainingSeconds > 0) {
+            this.remainingSeconds--;
+            this.elapsedSessionSeconds++;
+            this.updateDisplay(this.remainingSeconds);
+          } else {
+            this.complete();
+          }
+        },
+
+        pause() {
+          clearInterval(this.intervalId);
+          this.isRunning = false;
+          this.isPaused = true;
+          this.updateUIState('paused');
+        },
+
+        resume() {
+          this.isRunning = true;
+          this.isPaused = false;
+          this.updateUIState('running');
+          this.intervalId = setInterval(() => this.tick(), 1000);
+        },
+
+        resetAndSave() {
+          clearInterval(this.intervalId);
+          this.isRunning = false;
+          this.isPaused = false;
+          this.updateDisplay(this.sessionDuration);
+          this.updateUIState('idle');
+
+          app.saveProgress();
+
+          this.elapsedSessionSeconds = 0;
+        },
+
+        complete() {
+          clearInterval(this.intervalId);
+          this.isRunning = false;
+          this.updateDisplay(0);
+          this.updateUIState('completed');
+          app.saveProgress();
+          app.showToast('Session complete!');
+        },
+
+        getElapsedSession() {
+          return this.elapsedSessionSeconds;
+        },
+
+        updateDisplay(seconds) {
+          const m = Math.floor(seconds / 60);
+          const s = seconds % 60;
+          const text = `${m.toString().padStart(2, '0')}:${s
+            .toString()
+            .padStart(2, '0')}`;
+          document.getElementById('time-display').textContent = text;
+          document.getElementById('mini-time-display').textContent = text;
+          const ring = document.getElementById('progress-ring');
+          const offset =
+            this.circumference -
+            (seconds / this.sessionDuration) * this.circumference;
+          ring.style.strokeDashoffset = offset;
+        },
+
+        updateUIState(state) {
+          const btns = {
+            start: document.getElementById('start-btn'),
+            pause: document.getElementById('pause-btn'),
+            resume: document.getElementById('resume-btn'),
+            inputGroup: document.getElementById('input-group'),
+          };
+          const badge = document.getElementById('status-badge');
+          btns.start.classList.add('hidden');
+          btns.pause.classList.add('hidden');
+          btns.resume.classList.add('hidden');
+
+          if (state === 'idle') {
+            btns.inputGroup.style.visibility = 'visible';
+            btns.start.classList.remove('hidden');
+            badge.textContent = 'Ready';
+            badge.className = 'status-badge';
+          } else if (state === 'running') {
+            btns.inputGroup.style.visibility = 'hidden';
+            btns.pause.classList.remove('hidden');
+            badge.textContent = 'Reading...';
+            badge.className = 'status-badge running';
+          } else if (state === 'paused') {
+            btns.inputGroup.style.visibility = 'hidden';
+            btns.resume.classList.remove('hidden');
+            badge.textContent = 'Paused';
+            badge.className = 'status-badge paused';
+          } else if (state === 'completed') {
+            btns.inputGroup.style.visibility = 'visible';
+            btns.start.classList.remove('hidden');
+            badge.textContent = 'Completed!';
+            badge.className = 'status-badge running';
+          }
+        },
+      };
+
+      document.addEventListener('DOMContentLoaded', () => {
+        app.init();
+      });
     </script>
-</body>
+  </body>
 </html>
